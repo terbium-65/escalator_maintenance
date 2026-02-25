@@ -22,7 +22,8 @@
 - [x] Python 시뮬레이터 개발 및 3주치 시나리오 데이터 생성
 - [x] 데이터 전처리 및 스케일링 로직 구현
 - [x] simple threshold 모델 설계
-- [ ] isolation tree 모델 설계 및 학습
+- [x] isolation tree 모델 설계 및 학습
+- [x] XGBoost 모델 설계 및 학습
 - [ ] AutoEncoder 모델 설계 및 학습
 - [ ] 이상 탐지 결과 시각화 및 유지보수 스케줄링 로직 제안
 
