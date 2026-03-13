@@ -57,3 +57,6 @@ Loads the trained XGBoost and Isolation Forest models.
     *   Run `isolationForest.py` to train the unsupervised anomaly detector.
 3.  **Evaluate Risk**: Run `hybridModel.py` to combine the models and view instances requiring urgent attention.
 
+
+## Tableau Dashboard
+![Tableau Dashboard](./dashboard.png)
