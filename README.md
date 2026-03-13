@@ -1,32 +1,59 @@
-# 🚇 Subway Escalator Anomaly Detection & Maintenance Scheduling
+# Escalator Predictive Maintenance & Anomaly Detection
 
-지하철역 에스컬레이터의 센서 데이터를 시뮬레이션하고, 머신러닝을 활용해 이상 징후를 탐지하는 프로젝트입니다. 승객 흐름을 방해하지 않는 최적의 유지보수 스케줄링을 목표로 합니다.
+This project focuses on simulating realistic operational data for subway escalators and building machine learning models to predict potential hardware failures or anomalies before they lead to breakdowns. By combining physical simulations with both supervised and unsupervised learning techniques, the project creates a robust anomaly detection system.
 
-## 📌 Project Goals
-* **물리 기반 시뮬레이션**: AnyLogic을 활용한 물리 로직 검증 및 Python을 이용한 대량의 시뮬레이션 데이터 생성.
-* **이상 탐지 (Anomaly Detection)**: 전류, 온도, 진동 데이터를 분석하여 고장 전조 증상 파악.
-* **유지보수 최적화**: 승객 혼잡도를 고려하여 교통 흐름에 지장을 주지 않는 정비 시간대 제안.
+## 🚀 Key Features
 
-## 🛠 Tech Stack
-* **Simulation**: AnyLogic (Physical Logic Verification), Python (Data Generation)
-* **Data Analysis**: Pandas, NumPy, Matplotlib, Seaborn
-* **Machine Learning**: PyTorch (AutoEncoder), Scikit-learn (MinMaxScaler, Isolation Forest)
+*   **Realistic Data Simulation:** Simulates physical wear-and-tear (aging), passenger loads across different stations (잠실, 고속터미널, 용두), seasonal temperature variations, electrical current, and vibration data.
+*   **Hard Mode Scenarios:** Generates rare and complex failure cases to rigorously test the models' discriminative power.
+*   **Supervised Learning:** Utilizes XGBoost to classify potential failures based on engineered features.
+*   **Unsupervised Learning:** Implements Isolation Forest to detect unknown operational anomalies without predefined labels.
+*   **Hybrid Ensemble Engine:** Combines the strengths of supervised predictions (70%) and unsupervised risk scores (30%) to flag escalators for urgent inspection.
+*   **BI Integration:** Exports processed data for visual analytics in Tableau (`tableau_escalator_v6_final.csv`).
 
-## 📊 Data Overview (Synthetic Data)
-* **Features**: Station, Length, Season, Hour, Minute, PassengerCount, Current(A), Temp(°C), Vibration, Label
-* **Scenario**: 잠실, 고속터미널, 용두역의 3주간 1분 단위 데이터 (총 9개 시나리오)
-* **Status**: ✅ 데이터 생성 완료 및 물리적 타당성 검증(Thermal Equilibrium 등) 완료.
+## 📁 Repository Structure & Workflow
 
-## 📅 Roadmap / TODO
-- [x] AnyLogic을 이용한 센서 데이터 물리 로직 정립
-- [x] Python 시뮬레이터 개발 및 3주치 시나리오 데이터 생성
-- [x] 데이터 전처리 및 스케일링 로직 구현
-- [x] simple threshold 모델 설계
-- [x] isolation tree 모델 설계 및 학습
-- [x] XGBoost 모델 설계 및 학습
-- [x] AutoEncoder 모델 설계 및 학습
-- [x] 이상 탐지 결과 시각화 및 유지보수 스케줄링 로직 제안 >> 태블로
+The core workflow consists of data generation, model training, and hybrid evaluation.
 
+### 1. Data Generation & Preprocessing (`v6Data.py`)
+This script acts as the core simulator. It:
+*   Loads base passenger data (`시간대별 승차인원.csv`).
+*   Iterates through different stations and escalator lengths over a multi-week period.
+*   Calculates dynamic loads, aging impacts, motor current, vibration, and temperature characteristics based on passenger volume and physical principles.
+*   Generates probabilistic fault labels (`Label`=1).
+*   Applies **Feature Engineering** (e.g., `Rel_Current`, `Load_Per_Pax`, diffs) and **Robust Scaling**.
+*   Outputs: `escalator_v6_pro.csv`, `final_preprocessed_v6.csv`, and saves the scaler (`robust_scaler_v5.pkl`).
 
----
-*완료 (최종 업데이트: 2026-03-05)*
+### 2. Supervised Learning: XGBoost (`xgBoost.py`)
+Utilizes the preprocessed `v6` data to predict failures.
+*   Filters for operational hours (5 AM to 1 AM).
+*   Handles extreme data imbalance adjusting `scale_pos_weight`.
+*   Optimized for the Area Under the Precision-Recall Curve (`aucpr`) to reduce false positives.
+*   Outputs: `xgboost_model_v6_final.pkl`.
+
+### 3. Unsupervised Learning: Isolation Forest (`isolationForest.py`)
+Provides a safety net by identifying novel anomalies that the supervised model might miss.
+*   Learns solely from the distribution of normal operational features.
+*   Calculates an anomaly score to detect deviations.
+*   Outputs: `iso_forest_v6.pkl`.
+
+### 4. Hybrid Risk Assessment (`hybridModel.py`)
+Loads the trained XGBoost and Isolation Forest models.
+*   Calculates a normalized probability score from XGBoost (0.0 - 1.0).
+*   Calculates a normalized risk score from Isolation Forest (0.0 - 1.0).
+*   Calculates `Final_Risk = (XGB_Prob * 0.7) + (IF_Risk * 0.3)`.
+*   Flags operations with a `Final_Risk` > 0.8 as requiring **urgent inspection**.
+
+### Jupyter Notebooks
+*   `escalator.ipynb`: General EDA and simulator prototyping.
+*   `machineLearning.ipynb`: Exploratory ML modeling and evaluation.
+*   `threshold_model.ipynb`: Tests baseline rule-based threshold approaches.
+
+## ⚙️ Setup & Execution
+
+1.  **Generate Data**: Run `v6Data.py` to simulate the data and create the preprocessed outputs. *(Ensure you have the required base passenger CSV in the correct path).*
+2.  **Train Models**: 
+    *   Run `xgBoost.py` to train the supervised classifier.
+    *   Run `isolationForest.py` to train the unsupervised anomaly detector.
+3.  **Evaluate Risk**: Run `hybridModel.py` to combine the models and view instances requiring urgent attention.
+
